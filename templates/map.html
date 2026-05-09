@@ -1,0 +1,732 @@
+{% extends "base.html" %}
+
+{% block title %}دلني | الخريطة التفاعلية{% endblock %}
+
+{% block extra_css %}
+<!-- MapLibre GL JS -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+<style>
+    :root {
+        --primary: #2c3e50;
+        --secondary: #34495e;
+        --accent: #3498db;
+        --success: #27ae60;
+        --danger: #e74c3c;
+        --warning: #f39c12;
+    }
+
+    .map-container {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        margin-bottom: 40px;
+        border: 5px solid white;
+        height: 600px;
+        margin-top: 30px;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-controls {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: white;
+        border-radius: 50px;
+        padding: 5px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        display: flex;
+        gap: 5px;
+    }
+
+    .map-controls button {
+        border: none;
+        background: none;
+        padding: 10px 20px;
+        border-radius: 50px;
+        color: var(--primary);
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .map-controls button.active {
+        background: var(--accent);
+        color: white;
+    }
+
+    .route-planner {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        width: 300px;
+    }
+
+    .route-planner h5 {
+        margin-bottom: 15px;
+        color: var(--primary);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .route-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    .route-btn {
+        width: 100%;
+        padding: 12px;
+        background: var(--success);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .route-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+    }
+
+    .advanced-legend {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        min-width: 220px;
+    }
+
+    .legend-title {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+    }
+
+    .legend-color.doctor { background: var(--accent); }
+    .legend-color.assembly { background: var(--success); }
+    .legend-color.exit { background: #2ecc71; }
+    .legend-color.building { background: #95a5a6; }
+    .legend-color.path { background: #f1c40f; }
+
+    .section-title {
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+        font-weight: 800;
+        font-size: 2rem;
+        color: var(--primary);
+    }
+
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 80px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--success));
+    }
+
+    @media (max-width: 768px) {
+        .map-container { height: 500px; }
+        .route-planner { 
+            position: relative; 
+            top: 0; 
+            right: 0; 
+            width: 100%; 
+            margin: 10px; 
+        }
+        .advanced-legend { 
+            position: relative; 
+            bottom: 0; 
+            right: 0; 
+            margin: 10px; 
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="section-title mt-4"><i class="fas fa-map-marked-alt me-2"></i> الخريطة التفاعلية</h3>
+            <p class="text-muted">تصفح أقسام ومرافق الكلية بحرية أو ابحث عن مسارك داخل أروقة المباني</p>
+            <div class="map-container" id="map-container">
+                <div class="map-controls">
+                    <button class="active" onclick="setMapLayer('buildings')">
+                        <i class="fas fa-building"></i> المباني
+                    </button>
+                    <button onclick="setMapLayer('services')">
+                        <i class="fas fa-concierge-bell"></i> المرافق
+                    </button>
+                    <button onclick="setMapLayer('offices')">
+                        <i class="fas fa-user-tie"></i> المكاتب
+                    </button>
+                    <button onclick="setMapLayer('3d')">
+                        <i class="fas fa-cube"></i> عرض ثلاثي الأبعاد
+                    </button>
+                </div>
+
+                <div class="route-planner">
+                    <h5>
+                        <i class="fas fa-map-signal text-primary"></i>
+                        🧭 خطط لمسارك داخل الكلية
+                    </h5>
+                    <select class="route-input" id="start-point">
+                        <option value="">📍 اختر موقعك الحالي</option>
+                        <optgroup label="📚 المبنى التعليمي - الدور الأرضي">
+                            <option value="G123">غرفة G-123 - تقنية المعلومات</option>
+                            <option value="G125">غرفة G-125 - شؤون الموظفات</option>
+                            <option value="G132">غرفة G-132 - الشؤون المالية</option>
+                        </optgroup>
+                        <optgroup label="📚 المبنى التعليمي - الدور الأول">
+                            <option value="F099">غرفة F-099 - رئيسة قسم الحاسب</option>
+                            <option value="F093">غرفة F-093 - مكتب مدربات</option>
+                        </optgroup>
+                    </select>
+                    
+                    <select class="route-input" id="destination-point">
+                        <option value="">🎯 اختر وجهتك</option>
+                        <option value="A">☕ استراحة المدربات</option>
+                        <option value="B">📖 المكتبة</option>
+                        <option value="C">🏥 العيادة الطبية</option>
+                        <option value="D">🕌 المصلى</option>
+                    </select>
+                    
+                    <button class="route-btn" onclick="planRoute()">
+                        <i class="fas fa-play"></i> اعرض لي الطريق
+                    </button>
+                </div>
+
+                <div class="advanced-legend">
+                    <div class="legend-title">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        دليل الرموز
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color doctor"></div>
+                        <span>مكاتب الموظفات ({{ stats.total_doctors }})</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color assembly"></div>
+                        <span>مرافق خدمية</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color exit"></div>
+                        <span>مداخل ومخارج</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color building"></div>
+                        <span>المباني الرئيسية</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color path"></div>
+                        <span>الممرات والطرق</span>
+                    </div>
+                </div>
+
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<script>
+    let map;
+    let evacuationLayer = null;
+    let buildingsLayer = null;
+    let markers = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // إحداثيات الكلية (موقع حقيقي في الرياض)
+        const collegeCoords = [46.7112, 24.8411];
+        
+        // إنشاء الخريطة
+        map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'osm': {
+                        type: 'raster',
+                        tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '&copy; OpenStreetMap Contributors'
+                    },
+                    'osm-streets': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.de/{z}/{x}/{y}.png'],
+                        tileSize: 256
+                    },
+                    'satellite': {
+                        type: 'raster',
+                        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                        tileSize: 256
+                    },
+                    'buildings': {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'المبنى التعليمي',
+                                        height: 20,
+                                        color: '#95a5a6',
+                                        floors: 3
+                                    },
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: [[
+                                            [46.7108, 24.8408],
+                                            [46.7116, 24.8408],
+                                            [46.7116, 24.8414],
+                                            [46.7108, 24.8414],
+                                            [46.7108, 24.8408]
+                                        ]]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'المبنى الإداري',
+                                        height: 25,
+                                        color: '#7f8c8d',
+                                        floors: 4
+                                    },
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: [[
+                                            [46.7105, 24.8410],
+                                            [46.7110, 24.8410],
+                                            [46.7110, 24.8415],
+                                            [46.7105, 24.8415],
+                                            [46.7105, 24.8410]
+                                        ]]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'مبنى الخدمات',
+                                        height: 15,
+                                        color: '#bdc3c7',
+                                        floors: 2
+                                    },
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: [[
+                                            [46.7112, 24.8415],
+                                            [46.7118, 24.8415],
+                                            [46.7118, 24.8419],
+                                            [46.7112, 24.8419],
+                                            [46.7112, 24.8415]
+                                        ]]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    'paths': {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'الممر الرئيسي',
+                                        color: '#f1c40f',
+                                        width: 6
+                                    },
+                                    geometry: {
+                                        type: 'LineString',
+                                        coordinates: [
+                                            [46.7108, 24.8414],
+                                            [46.7110, 24.8412],
+                                            [46.7112, 24.8410],
+                                            [46.7115, 24.8408]
+                                        ]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'الممر الثانوي',
+                                        color: '#f39c12',
+                                        width: 4
+                                    },
+                                    geometry: {
+                                        type: 'LineString',
+                                        coordinates: [
+                                            [46.7116, 24.8414],
+                                            [46.7114, 24.8412],
+                                            [46.7112, 24.8410],
+                                            [46.7110, 24.8408]
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    'service-points': {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '☕ استراحة المدربات',
+                                        type: 'service',
+                                        description: 'استراحة خاصة للمدربات'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7115, 24.8415]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '📖 المكتبة',
+                                        type: 'service',
+                                        description: 'مكتبة متكاملة'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7110, 24.8405]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '🏥 العيادة الطبية',
+                                        type: 'service',
+                                        description: 'خدمات طبية وإسعافات أولية'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7113, 24.8413]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '🕌 المصلى',
+                                        type: 'service',
+                                        description: 'مصلى للنساء'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7109, 24.8409]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '🥤 آلة بيع',
+                                        type: 'service',
+                                        description: 'ماكينة مشروبات ساخنة'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7112, 24.8411]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                layers: [
+                    {
+                        id: 'osm-streets',
+                        type: 'raster',
+                        source: 'osm-streets',
+                        minzoom: 0,
+                        maxzoom: 22
+                    },
+                    {
+                        id: 'buildings-fill',
+                        type: 'fill',
+                        source: 'buildings',
+                        paint: {
+                            'fill-color': ['get', 'color'],
+                            'fill-opacity': 0.7,
+                            'fill-outline-color': '#2c3e50'
+                        }
+                    },
+                    {
+                        id: 'buildings-outline',
+                        type: 'line',
+                        source: 'buildings',
+                        paint: {
+                            'line-color': '#2c3e50',
+                            'line-width': 2
+                        }
+                    },
+                    {
+                        id: 'paths',
+                        type: 'line',
+                        source: 'paths',
+                        paint: {
+                            'line-color': ['get', 'color'],
+                            'line-width': ['get', 'width'],
+                            'line-opacity': 0.8
+                        }
+                    },
+                    {
+                        id: 'service-points',
+                        type: 'circle',
+                        source: 'service-points',
+                        paint: {
+                            'circle-radius': 10,
+                            'circle-color': '#27ae60',
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#ffffff'
+                        }
+                    }
+                ]
+            },
+            center: collegeCoords,
+            zoom: 17,
+            pitch: 45,
+            bearing: 0
+        });
+
+        map.addControl(new maplibregl.NavigationControl(), 'top-left');
+        map.addControl(new maplibregl.FullscreenControl(), 'top-left');
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        }), 'top-left');
+
+        const doctors = {{ doctors_json|tojson }};
+        
+        if (doctors && doctors.length > 0) {
+            doctors.forEach(doctor => {
+                if (doctor.latitude && doctor.longitude && doctor.latitude !== 0 && doctor.longitude !== 0) {
+                    
+                    const el = document.createElement('div');
+                    el.style.backgroundColor = '#3498db';
+                    el.style.width = '25px';
+                    el.style.height = '25px';
+                    el.style.borderRadius = '50%';
+                    el.style.border = '3px solid white';
+                    el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+                    el.style.cursor = 'pointer';
+                    el.style.backgroundImage = 'url(https://cdn-icons-png.flaticon.com/512/3135/3135715.png)';
+                    el.style.backgroundSize = 'cover';
+                    
+                    const popupContent = `
+                        <div style="direction:rtl; text-align:right; padding:10px; font-family: 'Cairo', sans-serif;">
+                            <h5 style="margin:0 0 10px 0; color: #2c3e50;">👩‍🏫 ${doctor.name}</h5>
+                            <p style="margin:5px 0;"><b>المسمى:</b> ${doctor.role || 'مدربة'}</p>
+                            <p style="margin:5px 0;"><b>الغرفة:</b> ${doctor.full_room || doctor.room_number || 'غير محدد'}</p>
+                            ${doctor.department ? `<p style="margin:5px 0;"><b>القسم:</b> ${doctor.department}</p>` : ''}
+                            <p style="margin:5px 0;"><b>المبنى:</b> ${doctor.building || 'المبنى التعليمي'}</p>
+                        </div>
+                    `;
+                    
+                    const marker = new maplibregl.Marker({ element: el })
+                        .setLngLat([doctor.longitude, doctor.latitude])
+                        .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
+                        .addTo(map);
+                    
+                    markers.push(marker);
+                }
+            });
+        }
+
+        setTimeout(() => {
+            const servicePoints = [
+                { name: '☕ استراحة المدربات', coords: [46.7115, 24.8415], desc: 'استراحة خاصة للمدربات' },
+                { name: '📖 المكتبة', coords: [46.7110, 24.8405], desc: 'مكتبة متكاملة للطالبات والموظفات' },
+                { name: '🏥 العيادة الطبية', coords: [46.7113, 24.8413], desc: 'خدمات طبية وإسعافات أولية' },
+                { name: '🕌 المصلى', coords: [46.7109, 24.8409], desc: 'مصلى للنساء' }
+            ];
+
+            servicePoints.forEach(point => {
+                const el = document.createElement('div');
+                el.style.backgroundColor = '#27ae60';
+                el.style.width = '30px';
+                el.style.height = '30px';
+                el.style.borderRadius = '50%';
+                el.style.border = '3px solid white';
+                el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+                el.style.fontSize = '16px';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.color = 'white';
+                
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat(point.coords)
+                    .setPopup(new maplibregl.Popup().setHTML(`
+                        <div style="direction:rtl; text-align:right; padding:10px;">
+                            <h5>${point.name}</h5>
+                            <p>${point.desc}</p>
+                        </div>
+                    `))
+                    .addTo(map);
+                
+                markers.push(marker);
+            });
+        }, 1000);
+
+        map.on('load', function() {
+            map.addLayer({
+                id: '3d-buildings',
+                source: 'buildings',
+                type: 'fill-extrusion',
+                paint: {
+                    'fill-extrusion-color': ['get', 'color'],
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': 0,
+                    'fill-extrusion-opacity': 0.8
+                }
+            });
+        });
+    });
+
+    function setMapLayer(layer) {
+        const buttons = document.querySelectorAll('.map-controls button');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (layer === 'buildings') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'none');
+            map.setLayoutProperty('service-points', 'visibility', 'none');
+            map.setPitch(0);
+        } else if (layer === 'services') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'visible');
+            map.setLayoutProperty('service-points', 'visibility', 'visible');
+            map.setPitch(0);
+        } else if (layer === 'offices') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'visible');
+            map.setLayoutProperty('service-points', 'visibility', 'visible');
+            map.setPitch(0);
+        } else if (layer === '3d') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'visible');
+            map.setLayoutProperty('service-points', 'visibility', 'visible');
+            map.setPitch(60);
+            map.setBearing(30);
+        }
+    }
+
+    function planRoute() {
+        const start = document.getElementById('start-point').value;
+        const dest = document.getElementById('destination-point').value;
+        
+        if (!start || !dest) {
+            alert('الرجاء اختيار موقعك الحالي والوجهة');
+            return;
+        }
+        
+        alert(`🧭 جاري حساب المسار من ${start} إلى ${dest}`);
+        
+        const routeCoordinates = [
+            [46.7112, 24.8411],
+            [46.7113, 24.8410],
+            [46.7114, 24.8409],
+            [46.7110, 24.8408]
+        ];
+        
+        if (map.getLayer('route')) {
+            map.removeLayer('route');
+            map.removeSource('route');
+        }
+        
+        map.addSource('route', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'LineString',
+                    coordinates: routeCoordinates
+                }
+            }
+        });
+        
+        map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            paint: {
+                'line-color': '#3498db',
+                'line-width': 6,
+                'line-dasharray': [2, 1]
+            }
+        });
+        
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < routeCoordinates.length) {
+                map.flyTo({
+                    center: routeCoordinates[i],
+                    zoom: 18,
+                    speed: 0.5
+                });
+                i++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 1000);
+    }
+</script>
+{% endblock %}

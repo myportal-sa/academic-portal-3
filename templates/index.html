@@ -1,0 +1,1474 @@
+{% extends "base.html" %}
+
+{% block title %}دلني | الرئيسية - دليلك الشامل داخل الكلية{% endblock %}
+
+{% block extra_css %}
+<!-- MapLibre GL JS -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+<style>
+    :root {
+        --primary: #2c3e50;
+        --secondary: #34495e;
+        --accent: #3498db;
+        --success: #27ae60;
+        --danger: #e74c3c;
+        --warning: #f39c12;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 80px 0;
+        margin-bottom: 40px;
+        border-radius: 0 0 50px 50px;
+        color: white;
+        text-align: center;
+    }
+
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+    }
+
+    .emergency-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin: -30px 0 40px 0;
+        position: relative;
+        z-index: 10;
+    }
+
+    .emergency-stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        border-bottom: 4px solid transparent;
+    }
+
+    .emergency-stat-card:hover {
+        transform: translateY(-5px);
+        border-bottom-color: var(--accent);
+    }
+
+    .emergency-stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 1.8rem;
+    }
+
+    .stat-icon-exit { background: #d4edda; color: #155724; }
+    .stat-icon-fire { background: #f8d7da; color: #721c24; }
+    .stat-icon-point { background: #cce5ff; color: #004085; }
+    .stat-icon-drill { background: #fff3cd; color: #856404; }
+
+    .map-container {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        margin-bottom: 40px;
+        border: 5px solid white;
+        height: 600px;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-controls {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: white;
+        border-radius: 50px;
+        padding: 5px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        display: flex;
+        gap: 5px;
+    }
+
+    .map-controls button {
+        border: none;
+        background: none;
+        padding: 10px 20px;
+        border-radius: 50px;
+        color: var(--primary);
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .map-controls button.active {
+        background: var(--accent);
+        color: white;
+    }
+
+    .route-planner {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        width: 300px;
+    }
+
+    .route-planner h5 {
+        margin-bottom: 15px;
+        color: var(--primary);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .route-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    .route-btn {
+        width: 100%;
+        padding: 12px;
+        background: var(--success);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .route-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(39,174,96,0.3);
+    }
+
+    .advanced-legend {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        min-width: 220px;
+    }
+
+    .legend-title {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+    }
+
+    .legend-color.doctor { background: var(--accent); }
+    .legend-color.evacuation { background: var(--danger); }
+    .legend-color.assembly { background: var(--success); }
+    .legend-color.fire { background: var(--warning); }
+    .legend-color.exit { background: #2ecc71; }
+    .legend-color.building { background: #95a5a6; }
+    .legend-color.path { background: #f1c40f; }
+
+    .building-card {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        transition: all 0.4s;
+        cursor: pointer;
+        height: 100%;
+    }
+
+    .building-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 45px rgba(52,152,219,0.3);
+    }
+
+    .building-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+
+    .section-title {
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+        font-weight: 800;
+        font-size: 2rem;
+        color: var(--primary);
+    }
+
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 80px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--success));
+    }
+
+    .nav-pills .btn-outline-primary {
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 10px 25px;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+
+    .nav-pills .btn-outline-primary.active {
+        background: var(--accent);
+        color: white;
+        border-color: transparent;
+    }
+
+    .bg-ground { background: #8B4513; }
+    .bg-first { background: #4682B4; }
+    .bg-second { background: #2F4F4F; }
+
+    .doctor-card {
+        transition: all 0.4s;
+        height: 100%;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .doctor-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(52,152,219,0.2);
+    }
+
+    .floor-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        z-index: 10;
+        color: white;
+    }
+
+    .badge-ground { background: #8B4513; }
+    .badge-first { background: #4682B4; }
+    .badge-second { background: #2F4F4F; }
+
+    .staff-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .staff-item {
+        padding: 8px 12px;
+        border-bottom: 1px dashed #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .staff-item:last-child {
+        border-bottom: none;
+    }
+
+    .staff-item i {
+        color: var(--accent);
+        width: 20px;
+    }
+
+    .bg-gradient-dark {
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+
+    .emergency-marker {
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section h1 { font-size: 2rem; }
+        .emergency-stats { grid-template-columns: repeat(2, 1fr); }
+        .map-container { height: 500px; }
+        .route-planner { 
+            position: relative; 
+            top: 0; 
+            right: 0; 
+            width: 100%; 
+            margin: 10px; 
+        }
+        .advanced-legend { 
+            position: relative; 
+            bottom: 0; 
+            right: 0; 
+            margin: 10px; 
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <h1 class="fw-bold mb-3">📍 دلني | دليلك الشامل داخل الكلية التقنية الرقمية للبنات بالرياض</h1>
+        <p class="lead">نظام إرشادي ذكي يساعدك في تحديد المواقع والتنقل بين المكاتب والمرافق بسهولة</p>
+        <div class="mt-4">
+            <a href="#map" class="btn btn-light btn-lg rounded-pill px-4 mx-2">
+                <i class="fas fa-map-marked-alt"></i> استكشف الخريطة
+            </a>
+            <a href="#directory" class="btn btn-outline-light btn-lg rounded-pill px-4 mx-2">
+                <i class="fas fa-address-book"></i> دليل الموظفين
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- إحصائيات -->
+    <div class="emergency-stats">
+        <div class="emergency-stat-card">
+            <div class="emergency-stat-icon stat-icon-exit">
+                <i class="fas fa-building"></i>
+            </div>
+            <h3 class="stat-number">3</h3>
+            <p class="text-muted">مباني رئيسية</p>
+        </div>
+        <div class="emergency-stat-card">
+            <div class="emergency-stat-icon stat-icon-fire">
+                <i class="fas fa-door-open"></i>
+            </div>
+            <h3 class="stat-number">42</h3>
+            <p class="text-muted">مكتب وقاعة</p>
+        </div>
+        <div class="emergency-stat-card">
+            <div class="emergency-stat-icon stat-icon-point">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="stat-number">{{ stats.total_doctors }}</h3>
+            <p class="text-muted">موظفة ومدربة</p>
+        </div>
+        <div class="emergency-stat-card">
+            <div class="emergency-stat-icon stat-icon-drill">
+                <i class="fas fa-location-dot"></i>
+            </div>
+            <h3 class="stat-number">6</h3>
+            <p class="text-muted">نقاط خدمة</p>
+        </div>
+    </div>
+
+    <!-- الخريطة التفاعلية -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="map-container" id="map-container">
+                <div class="map-controls">
+                    <button class="active" onclick="setMapLayer('buildings')">
+                        <i class="fas fa-building"></i> المباني
+                    </button>
+                    <button onclick="setMapLayer('services')">
+                        <i class="fas fa-concierge-bell"></i> المرافق
+                    </button>
+                    <button onclick="setMapLayer('offices')">
+                        <i class="fas fa-user-tie"></i> المكاتب
+                    </button>
+                    <button onclick="setMapLayer('3d')">
+                        <i class="fas fa-cube"></i> عرض ثلاثي الأبعاد
+                    </button>
+                </div>
+
+                <div class="route-planner">
+                    <h5>
+                        <i class="fas fa-map-signal text-primary"></i>
+                        🧭 خطط لمسارك داخل الكلية
+                    </h5>
+                    <select class="route-input" id="start-point">
+                        <option value="">📍 اختر موقعك الحالي</option>
+                        <optgroup label="📚 المبنى التعليمي - الدور الأرضي">
+                            <option value="G123">غرفة G-123 - تقنية المعلومات</option>
+                            <option value="G125">غرفة G-125 - شؤون الموظفات</option>
+                            <option value="G132">غرفة G-132 - الشؤون المالية</option>
+                        </optgroup>
+                        <optgroup label="📚 المبنى التعليمي - الدور الأول">
+                            <option value="F099">غرفة F-099 - رئيسة قسم الحاسب</option>
+                            <option value="F093">غرفة F-093 - مكتب مدربات</option>
+                        </optgroup>
+                    </select>
+                    
+                    <select class="route-input" id="destination-point">
+                        <option value="">🎯 اختر وجهتك</option>
+                        <option value="A">☕ استراحة المدربات</option>
+                        <option value="B">📖 المكتبة</option>
+                        <option value="C">🏥 العيادة الطبية</option>
+                        <option value="D">🕌 المصلى</option>
+                    </select>
+                    
+                    <button class="route-btn" onclick="planRoute()">
+                        <i class="fas fa-play"></i> اعرض لي الطريق
+                    </button>
+                </div>
+
+                <div class="advanced-legend">
+                    <div class="legend-title">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        دليل الرموز
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color doctor"></div>
+                        <span>مكاتب الموظفات ({{ stats.total_doctors }})</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color assembly"></div>
+                        <span>مرافق خدمية</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color exit"></div>
+                        <span>مداخل ومخارج</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color building"></div>
+                        <span>المباني الرئيسية</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color path"></div>
+                        <span>الممرات والطرق</span>
+                    </div>
+                </div>
+
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات المباني -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="building-card" onclick="flyToBuilding('edu')">
+                <div class="building-icon">
+                    <i class="fas fa-school"></i>
+                </div>
+                <h3>المبنى التعليمي</h3>
+                <p><i class="fas fa-door-open"></i> {{ stats.ground_floor + stats.first_floor + stats.second_floor }} مكتب وقاعة | 3 أدوار</p>
+                <small><i class="fas fa-info-circle"></i> يحتوي على المكاتب الإدارية وغرف التدريس</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="building-card" onclick="flyToBuilding('services')">
+                <div class="building-icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h3>مبنى الخدمات</h3>
+                <p><i class="fas fa-concierge-bell"></i> 15 مكتب | 2 دور</p>
+                <small><i class="fas fa-info-circle"></i> المطعم، المغسلة، المستودعات</small>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="building-card" onclick="flyToBuilding('admin')">
+                <div class="building-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h3>المبنى الإداري</h3>
+                <p><i class="fas fa-users-gear"></i> 30 مكتب | 4 أدوار</p>
+                <small><i class="fas fa-info-circle"></i> الإدارة العليا والشؤون الإدارية</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- دليل المكاتب والموظفين -->
+    <div class="row" id="directory">
+        <div class="col-12 mb-4">
+            <h3 class="section-title"><i class="fas fa-address-card me-2"></i> دليل المكاتب والموظفات</h3>
+            <p class="text-muted">استعرض المكاتب والموظفات حسب الدور - اضغط على أي مكتب لعرض التفاصيل</p>
+        </div>
+
+        <div class="col-12 mb-4">
+            <div class="nav nav-pills gap-2" id="floor-tabs" role="tablist">
+                <button class="btn btn-outline-primary active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#ground-floor">
+                    الدور الأرضي <span class="badge bg-primary text-white ms-2">{{ stats.ground_floor }}</span>
+                </button>
+                <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#first-floor">
+                    الدور الأول <span class="badge bg-primary text-white ms-2">{{ stats.first_floor }}</span>
+                </button>
+                <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#second-floor">
+                    الدور الثاني <span class="badge bg-primary text-white ms-2">{{ stats.second_floor }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <!-- الدور الأرضي (نفس المحتوى السابق مع تعديل النصوص) -->
+            <div class="tab-pane fade show active" id="ground-floor">
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-desktop me-2"></i> G-123 - تقنية المعلومات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. غالية المالكي - رئيسة القسم</li>
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. تهاني الحمود - مدربة</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-clock"></i> أوقات الدوام: 8ص - 2م</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-users me-2"></i> G-125 - شؤون الموظفات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. امل المويس - مديرة الشؤون</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-phone"></i> داخلي: 125</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-user me-2"></i> G-134 - صالة متعددة الأغراض
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-users"></i> قاعة محاضرات - تتسع لـ 100 شخص</p>
+                                <small class="text-muted"><i class="fas fa-video"></i> مجهزة بأنظمة صوت ومرئي</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-theater-masks me-2"></i> G-030 - بهو المسرح
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-microphone-alt"></i> مسرح يتسع لـ 300 شخص</p>
+                                <small class="text-muted">يستخدم للمناسبات والمؤتمرات</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-user-graduate me-2"></i> G-045 - شؤون المتدربات
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-file-alt"></i> استقبال واستعلامات المتدربات</p>
+                                <small class="text-muted">VICE DEANS OF TRAINEES AFFAIRS</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-file-invoice-dollar me-2"></i> G-132 - الشؤون المالية
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. مشاعل المطيري - مديرة المالية</li>
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. نورة الروقي - محاسبة</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-calculator"></i> خدمات: الرواتب، الصرفيات</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الدور الأول (نفس المحتوى السابق) -->
+            <div class="tab-pane fade" id="first-floor">
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-laptop-code me-2"></i> F-099 - رئيسة قسم الحاسب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. هند الحربي - رئيسة القسم</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-envelope"></i> h.alharbi@tvtc.edu.sa</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-093 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ثناء الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. تهاني معزي المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. خلود العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شجون المطيري</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-094 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. رحاب العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. إيمان الظلماوي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. هاجر المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. حنين العتيبي</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- باقي المكاتب بنفس النمط... -->
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-095 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. حنان الدليالن</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ابتسام المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. منال الشمري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. عهود المسعد</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-100 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. خلود السهلي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. أثير القحطاني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. رنا العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. دانية الموسى</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شادن الجاسر</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ريهام السيف</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شوق الكمال</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-101 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شذى البدر</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. نوره الخلف</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مالك اليوسف</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. علياء القرني</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-102 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. سلمى الشهري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. أسماء العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. الهنوف الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مالك العبدالحافظ</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-103 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. خلود الجعيد</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. أماني المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. صفية الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شيخة العريدي</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-award me-2"></i> F-090 - وكالة الجودة
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. منال العمري - مديرة الجودة</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-clipboard-list"></i> الاعتماد الأكاديمي والجودة</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-briefcase me-2"></i> F-089 - وكالة شؤون التدريب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. وفاء العريفي - مديرة التدريب</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-graduation-cap"></i> البرامج التدريبية والشراكات</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-tasks me-2"></i> F-015 - رئيسة التنسيق
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. روان الكلثم - منسقة عامة</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-user-graduate me-2"></i> F-013 - وكالة شؤون المتدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. ايمان الحربي - وكيلة المتدربات</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الدور الثاني (نفس المحتوى السابق) -->
+            <div class="tab-pane fade" id="second-floor">
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> S-074 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ندى العبلاني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> د. ابتهال اليماني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. زينب الناصر</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-door-closed me-2"></i> S-064 - مكتب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. نورة السبيعي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. دانة الثنيان</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ندى العمري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. بسمة عبداللطيف</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> S-073 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ايمان الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. كوثر الوهيب</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. نوره بن حسن</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. جميلة الشهري</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-door-closed me-2"></i> S-065 - مكتب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. فاطمة التويجري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. فاطمة القرني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. غادة</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مها الزهراني</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-door-closed me-2"></i> S-066 - مكتب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. اماني القرني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. فاطمة الفايز</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. آل صقر</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شروق المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مي</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> S-069 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> د. نورة الحسين</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. اروى الشايع</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-coffee me-2"></i> S-071 - استراحة مدربات
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-mug-hot"></i> استراحة خاصة للمدربات</p>
+                                <small class="text-muted">COACHES LOUNGE</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-user-tie me-2"></i> S-070 - رئيسة قسم الدراسات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. تهاني شديد المطيري - رئيسة القسم</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-book-open"></i> المناهج والدراسات العليا</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<script>
+    let map;
+    let evacuationLayer = null;
+    let buildingsLayer = null;
+    let markers = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // إحداثيات الكلية (موقع حقيقي في الرياض)
+        const collegeCoords = [46.7112, 24.8411];
+        
+        // إنشاء الخريطة مع خريطة شوارع حقيقية
+        map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'osm': {
+                        type: 'raster',
+                        tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '&copy; OpenStreetMap Contributors'
+                    },
+                    'osm-streets': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.de/{z}/{x}/{y}.png'],
+                        tileSize: 256
+                    },
+                    'satellite': {
+                        type: 'raster',
+                        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                        tileSize: 256
+                    },
+                    'buildings': {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'المبنى التعليمي',
+                                        height: 20,
+                                        color: '#95a5a6',
+                                        floors: 3
+                                    },
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: [[
+                                            [46.7108, 24.8408],
+                                            [46.7116, 24.8408],
+                                            [46.7116, 24.8414],
+                                            [46.7108, 24.8414],
+                                            [46.7108, 24.8408]
+                                        ]]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'المبنى الإداري',
+                                        height: 25,
+                                        color: '#7f8c8d',
+                                        floors: 4
+                                    },
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: [[
+                                            [46.7105, 24.8410],
+                                            [46.7110, 24.8410],
+                                            [46.7110, 24.8415],
+                                            [46.7105, 24.8415],
+                                            [46.7105, 24.8410]
+                                        ]]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'مبنى الخدمات',
+                                        height: 15,
+                                        color: '#bdc3c7',
+                                        floors: 2
+                                    },
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: [[
+                                            [46.7112, 24.8415],
+                                            [46.7118, 24.8415],
+                                            [46.7118, 24.8419],
+                                            [46.7112, 24.8419],
+                                            [46.7112, 24.8415]
+                                        ]]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    'paths': {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'الممر الرئيسي',
+                                        color: '#f1c40f',
+                                        width: 6
+                                    },
+                                    geometry: {
+                                        type: 'LineString',
+                                        coordinates: [
+                                            [46.7108, 24.8414],
+                                            [46.7110, 24.8412],
+                                            [46.7112, 24.8410],
+                                            [46.7115, 24.8408]
+                                        ]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: 'الممر الثانوي',
+                                        color: '#f39c12',
+                                        width: 4
+                                    },
+                                    geometry: {
+                                        type: 'LineString',
+                                        coordinates: [
+                                            [46.7116, 24.8414],
+                                            [46.7114, 24.8412],
+                                            [46.7112, 24.8410],
+                                            [46.7110, 24.8408]
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    'service-points': {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '☕ استراحة المدربات',
+                                        type: 'service',
+                                        description: 'استراحة خاصة للمدربات'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7115, 24.8415]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '📖 المكتبة',
+                                        type: 'service',
+                                        description: 'مكتبة متكاملة'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7110, 24.8405]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '🏥 العيادة الطبية',
+                                        type: 'service',
+                                        description: 'خدمات طبية وإسعافات أولية'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7113, 24.8413]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '🕌 المصلى',
+                                        type: 'service',
+                                        description: 'مصلى للنساء'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7109, 24.8409]
+                                    }
+                                },
+                                {
+                                    type: 'Feature',
+                                    properties: {
+                                        name: '🥤 آلة بيع',
+                                        type: 'service',
+                                        description: 'ماكينة مشروبات ساخنة'
+                                    },
+                                    geometry: {
+                                        type: 'Point',
+                                        coordinates: [46.7112, 24.8411]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                layers: [
+                    {
+                        id: 'osm-streets',
+                        type: 'raster',
+                        source: 'osm-streets',
+                        minzoom: 0,
+                        maxzoom: 22
+                    },
+                    {
+                        id: 'buildings-fill',
+                        type: 'fill',
+                        source: 'buildings',
+                        paint: {
+                            'fill-color': ['get', 'color'],
+                            'fill-opacity': 0.7,
+                            'fill-outline-color': '#2c3e50'
+                        }
+                    },
+                    {
+                        id: 'buildings-outline',
+                        type: 'line',
+                        source: 'buildings',
+                        paint: {
+                            'line-color': '#2c3e50',
+                            'line-width': 2
+                        }
+                    },
+                    {
+                        id: 'paths',
+                        type: 'line',
+                        source: 'paths',
+                        paint: {
+                            'line-color': ['get', 'color'],
+                            'line-width': ['get', 'width'],
+                            'line-opacity': 0.8
+                        }
+                    },
+                    {
+                        id: 'service-points',
+                        type: 'circle',
+                        source: 'service-points',
+                        paint: {
+                            'circle-radius': 10,
+                            'circle-color': '#27ae60',
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#ffffff'
+                        }
+                    }
+                ]
+            },
+            center: collegeCoords,
+            zoom: 17,
+            pitch: 45,
+            bearing: 0
+        });
+
+        map.addControl(new maplibregl.NavigationControl(), 'top-left');
+        map.addControl(new maplibregl.FullscreenControl(), 'top-left');
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        }), 'top-left');
+
+        // جلب الأكاديميات المسجلات
+        const doctors = {{ doctors_json|tojson }};
+        
+        console.log('عدد الموظفات المسجلات:', doctors.length);
+
+        // إضافة الموظفات إلى الخريطة
+        if (doctors && doctors.length > 0) {
+            doctors.forEach(doctor => {
+                if (doctor.latitude && doctor.longitude && doctor.latitude !== 0 && doctor.longitude !== 0) {
+                    
+                    const el = document.createElement('div');
+                    el.style.backgroundColor = '#3498db';
+                    el.style.width = '25px';
+                    el.style.height = '25px';
+                    el.style.borderRadius = '50%';
+                    el.style.border = '3px solid white';
+                    el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+                    el.style.cursor = 'pointer';
+                    el.style.backgroundImage = 'url(https://cdn-icons-png.flaticon.com/512/3135/3135715.png)';
+                    el.style.backgroundSize = 'cover';
+                    
+                    const popupContent = `
+                        <div style="direction:rtl; text-align:right; padding:10px; font-family: 'Cairo', sans-serif;">
+                            <h5 style="margin:0 0 10px 0; color: #2c3e50;">👩‍🏫 ${doctor.name}</h5>
+                            <p style="margin:5px 0;"><b>المسمى:</b> ${doctor.role || 'مدربة'}</p>
+                            <p style="margin:5px 0;"><b>الغرفة:</b> ${doctor.full_room || doctor.room_number || 'غير محدد'}</p>
+                            ${doctor.department ? `<p style="margin:5px 0;"><b>القسم:</b> ${doctor.department}</p>` : ''}
+                            <p style="margin:5px 0;"><b>المبنى:</b> ${doctor.building || 'المبنى التعليمي'}</p>
+                        </div>
+                    `;
+                    
+                    const marker = new maplibregl.Marker({ element: el })
+                        .setLngLat([doctor.longitude, doctor.latitude])
+                        .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
+                        .addTo(map);
+                    
+                    markers.push(marker);
+                }
+            });
+        }
+
+        // إضافة نقاط الخدمة الإضافية
+        setTimeout(() => {
+            // نقاط خدمة إضافية
+            const servicePoints = [
+                { name: '☕ استراحة المدربات', coords: [46.7115, 24.8415], desc: 'استراحة خاصة للمدربات' },
+                { name: '📖 المكتبة', coords: [46.7110, 24.8405], desc: 'مكتبة متكاملة للطالبات والموظفات' },
+                { name: '🏥 العيادة الطبية', coords: [46.7113, 24.8413], desc: 'خدمات طبية وإسعافات أولية' },
+                { name: '🕌 المصلى', coords: [46.7109, 24.8409], desc: 'مصلى للنساء' }
+            ];
+
+            servicePoints.forEach(point => {
+                const el = document.createElement('div');
+                el.style.backgroundColor = '#27ae60';
+                el.style.width = '30px';
+                el.style.height = '30px';
+                el.style.borderRadius = '50%';
+                el.style.border = '3px solid white';
+                el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+                el.style.fontSize = '16px';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.color = 'white';
+                
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat(point.coords)
+                    .setPopup(new maplibregl.Popup().setHTML(`
+                        <div style="direction:rtl; text-align:right; padding:10px;">
+                            <h5>${point.name}</h5>
+                            <p>${point.desc}</p>
+                        </div>
+                    `))
+                    .addTo(map);
+                
+                markers.push(marker);
+            });
+        }, 1000);
+
+        // إضافة تأثير ثلاثي الأبعاد للمباني
+        map.on('load', function() {
+            map.addLayer({
+                id: '3d-buildings',
+                source: 'buildings',
+                type: 'fill-extrusion',
+                paint: {
+                    'fill-extrusion-color': ['get', 'color'],
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': 0,
+                    'fill-extrusion-opacity': 0.8
+                }
+            });
+        });
+    });
+
+    function setMapLayer(layer) {
+        const buttons = document.querySelectorAll('.map-controls button');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (layer === 'buildings') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'none');
+            map.setLayoutProperty('service-points', 'visibility', 'none');
+            map.setPitch(0);
+        } else if (layer === 'services') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'visible');
+            map.setLayoutProperty('service-points', 'visibility', 'visible');
+            map.setPitch(0);
+        } else if (layer === 'offices') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'visible');
+            map.setLayoutProperty('service-points', 'visibility', 'visible');
+            map.setPitch(0);
+        } else if (layer === '3d') {
+            map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+            map.setLayoutProperty('paths', 'visibility', 'visible');
+            map.setLayoutProperty('service-points', 'visibility', 'visible');
+            map.setPitch(60);
+            map.setBearing(30);
+        }
+    }
+
+    function planRoute() {
+        const start = document.getElementById('start-point').value;
+        const dest = document.getElementById('destination-point').value;
+        
+        if (!start || !dest) {
+            alert('الرجاء اختيار موقعك الحالي والوجهة');
+            return;
+        }
+        
+        alert(`🧭 جاري حساب المسار من ${start} إلى ${dest}`);
+        
+        // حساب المسار
+        const routeCoordinates = [
+            [46.7112, 24.8411],
+            [46.7113, 24.8410],
+            [46.7114, 24.8409],
+            [46.7110, 24.8408]
+        ];
+        
+        // إضافة خط المسار على الخريطة
+        if (map.getLayer('route')) {
+            map.removeLayer('route');
+            map.removeSource('route');
+        }
+        
+        map.addSource('route', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'LineString',
+                    coordinates: routeCoordinates
+                }
+            }
+        });
+        
+        map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            paint: {
+                'line-color': '#3498db',
+                'line-width': 6,
+                'line-dasharray': [2, 1]
+            }
+        });
+        
+        // تحريك الكاميرا على طول المسار
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < routeCoordinates.length) {
+                map.flyTo({
+                    center: routeCoordinates[i],
+                    zoom: 18,
+                    speed: 0.5
+                });
+                i++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 1000);
+    }
+
+    function flyToBuilding(building) {
+        let coordinates;
+        let zoom = 18;
+        
+        if (building === 'edu') {
+            coordinates = [46.7112, 24.8411];
+        } else if (building === 'services') {
+            coordinates = [46.7115, 24.8417];
+        } else if (building === 'admin') {
+            coordinates = [46.7107, 24.8412];
+        }
+        
+        map.flyTo({
+            center: coordinates,
+            zoom: zoom,
+            speed: 1.5,
+            curve: 1,
+            easing(t) {
+                return t;
+            }
+        });
+        
+        setTimeout(() => {
+            new maplibregl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(`<h5>${building === 'edu' ? '📚 المبنى التعليمي' : building === 'services' ? '🍽️ مبنى الخدمات' : '🏛️ المبنى الإداري'}</h5>`)
+                .addTo(map);
+        }, 1500);
+    }
+</script>
+{% endblock %}

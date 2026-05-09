@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دلني | البوابة الإرشادية للكلية التقنية الرقمية للبنات بالرياض</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --bg-light: #f8f9fa;
+            --text-dark: #2c3e50;
+        }
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-primary {
+            background-color: var(--accent-color);
+            border: none;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+            border-radius: 0 0 50px 50px;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            z-index: 1;
+        }
+        .footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        /* تنسيق علامات الخريطة */
+        .custom-marker-doctor {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-radius: 50% 50% 50% 0;
+            border: 3px solid white;
+            width: 40px !important;
+            height: 40px !important;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            line-height: 40px;
+            color: white;
+            font-size: 20px;
+        }
+        .custom-marker-doctor i {
+            transform: rotate(45deg);
+        }
+        .custom-marker-class {
+            background: linear-gradient(135deg, #27ae60, #219a52);
+            border-radius: 50% 50% 50% 0;
+            border: 3px solid white;
+            width: 40px !important;
+            height: 40px !important;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            line-height: 40px;
+            color: white;
+            font-size: 20px;
+        }
+        .custom-marker-class i {
+            transform: rotate(45deg);
+        }
+        .leaflet-popup-content {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-width: 200px;
+        }
+        .floor-badge {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        /* Splash Screen */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            color: white;
+            text-align: center;
+        }
+        .splash-content {
+            animation: fadeIn 1s ease-in;
+        }
+        .splash-logo-img {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) both;
+        }
+        .splash-title {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .splash-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+        .splash-loader {
+            width: 50px;
+            height: 5px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .splash-loader::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50px;
+            width: 50px;
+            height: 100%;
+            background: #667eea;
+            border-radius: 5px;
+            animation: load 1.5s infinite ease-in-out;
+        }
+        @keyframes load {
+            100% { left: 100%; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .splash-hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* AI Chat Widget Styles (Dark Mode Digital Purple/Blue) */
+        .ai-chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+        }
+        .ai-chat-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-chat-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6);
+        }
+        .ai-chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 450px;
+            background-color: #1a1a2e;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #302b63;
+        }
+        @media (max-width: 400px) {
+            .ai-chat-window {
+                width: 300px;
+                right: -10px;
+            }
+        }
+        .ai-chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+        }
+        .ai-chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ai-chat-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .ai-chat-body::-webkit-scrollbar-thumb {
+            background-color: #764ba2;
+            border-radius: 10px;
+        }
+        .ai-message, .user-message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .ai-message {
+            background-color: #24243e;
+            color: #e0e0e0;
+            align-self: flex-start;
+            border-bottom-right-radius: 5px;
+            border: 1px solid #302b63;
+        }
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            align-self: flex-end;
+            border-bottom-left-radius: 5px;
+        }
+        .ai-chat-footer {
+            padding: 15px;
+            background-color: #0f0c29;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #302b63;
+        }
+        #ai-chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #302b63;
+            background-color: #24243e;
+            color: white;
+            outline: none;
+        }
+        #ai-chat-input::placeholder {
+            color: #888;
+        }
+        #ai-chat-send {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        #ai-chat-send:hover {
+            transform: scale(1.1);
+        }
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 10px 15px;
+            background-color: #24243e;
+            border-radius: 15px;
+            border-bottom-right-radius: 5px;
+            align-self: flex-start;
+            width: fit-content;
+            border: 1px solid #302b63;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="شعار دلني" class="splash-logo-img">
+            <h2 class="splash-title">مرحباً بك في موقع دلني</h2>
+            <p class="splash-subtitle">البوابة الإرشادية للكلية التقنية الرقمية للبنات بالرياض</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-compass me-2"></i> دلني | البوابة الإرشادية
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('map_page') }}">الخريطة التفاعلية</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('directory_page') }}">دليل المكاتب</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="container mt-3">
+          {% for message in messages %}
+            <div class="alert alert-info alert-dismissible fade show">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <footer class="footer text-center">
+        <div class="container">
+            <p>© 2026 دلني - البوابة الإرشادية للكلية التقنية الرقمية للبنات بالرياض - جميع الحقوق محفوظة</p>
+            <p class="small mt-2">نظام إرشادي ذكي للمواقع والخدمات داخل الكلية</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+
+    <!-- AI Chat Widget -->
+    <div id="ai-chat-widget" class="ai-chat-widget">
+        <button id="ai-chat-btn" class="ai-chat-btn">
+            <i class="fas fa-robot"></i>
+        </button>
+        <div id="ai-chat-window" class="ai-chat-window d-none">
+            <div class="ai-chat-header">
+                <span><i class="fas fa-robot me-2"></i> المستشار الذكي</span>
+                <button id="ai-chat-close" class="btn-close btn-close-white"></button>
+            </div>
+            <div id="ai-chat-body" class="ai-chat-body">
+                <div class="ai-message">مرحباً بك! أنا المساعد الذكي الخاص بالكلية التقنية الرقمية. كيف يمكنني مساعدتك؟</div>
+            </div>
+            <div class="ai-chat-footer">
+                <input type="text" id="ai-chat-input" placeholder="اكتب سؤالك هنا..." autocomplete="off">
+                <button id="ai-chat-send"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chat logic -->
+    <script>
+        // Splash Screen Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const splashScreen = document.getElementById('splash-screen');
+            if (splashScreen) {
+                if (!sessionStorage.getItem('splashShown')) {
+                    setTimeout(() => {
+                        splashScreen.classList.add('splash-hidden');
+                        sessionStorage.setItem('splashShown', 'true');
+                    }, 3000);
+                } else {
+                    splashScreen.style.display = 'none';
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatBtn = document.getElementById('ai-chat-btn');
+            const chatWindow = document.getElementById('ai-chat-window');
+            const chatClose = document.getElementById('ai-chat-close');
+            const chatInput = document.getElementById('ai-chat-input');
+            const chatSend = document.getElementById('ai-chat-send');
+            const chatBody = document.getElementById('ai-chat-body');
+
+            // Toggle chat window
+            chatBtn.addEventListener('click', () => {
+                chatWindow.classList.toggle('d-none');
+                if(!chatWindow.classList.contains('d-none')){
+                    chatInput.focus();
+                }
+            });
+
+            // Close chat window
+            chatClose.addEventListener('click', () => {
+                chatWindow.classList.add('d-none');
+            });
+
+            // Send message function
+            async function sendMessage() {
+                const text = chatInput.value.trim();
+                if(!text) return;
+
+                // Append user message
+                const userMsgDiv = document.createElement('div');
+                userMsgDiv.className = 'user-message';
+                userMsgDiv.textContent = text;
+                chatBody.appendChild(userMsgDiv);
+
+                chatInput.value = '';
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                // Append typing indicator
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+                chatBody.appendChild(typingDiv);
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                try {
+                    // Send request to Flask backend
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: text })
+                    });
+
+                    const data = await response.json();
+                    
+                    // Remove typing indicator
+                    typingDiv.remove();
+
+                    // Append AI response
+                    const aiMsgDiv = document.createElement('div');
+                    aiMsgDiv.className = 'ai-message';
+                    aiMsgDiv.textContent = data.reply;
+                    chatBody.appendChild(aiMsgDiv);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    typingDiv.remove();
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'ai-message text-danger';
+                    errorDiv.textContent = 'حدث خطأ في الاتصال بالخادم. حاول مرة أخرى.';
+                    chatBody.appendChild(errorDiv);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }
+            }
+
+            chatSend.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

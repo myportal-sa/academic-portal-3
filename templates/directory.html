@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block title %}دلني | دليل الموظفات{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #2c3e50;
+        --secondary: #34495e;
+        --accent: #3498db;
+        --success: #27ae60;
+        --danger: #e74c3c;
+        --warning: #f39c12;
+    }
+
+    .section-title {
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+        font-weight: 800;
+        font-size: 2rem;
+        color: var(--primary);
+    }
+
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 80px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--success));
+    }
+
+    .nav-pills .btn-outline-primary {
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        padding: 10px 25px;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+
+    .nav-pills .btn-outline-primary.active {
+        background: var(--accent);
+        color: white;
+        border-color: transparent;
+    }
+
+    .bg-ground { background: #8B4513; }
+    .bg-first { background: #4682B4; }
+    .bg-second { background: #2F4F4F; }
+
+    .doctor-card {
+        transition: all 0.4s;
+        height: 100%;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .doctor-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(52,152,219,0.2);
+    }
+
+    .floor-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        z-index: 10;
+        color: white;
+    }
+
+    .badge-ground { background: #8B4513; }
+    .badge-first { background: #4682B4; }
+    .badge-second { background: #2F4F4F; }
+
+    .staff-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .staff-item {
+        padding: 8px 12px;
+        border-bottom: 1px dashed #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .staff-item:last-child {
+        border-bottom: none;
+    }
+
+    .staff-item i {
+        color: var(--accent);
+        width: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row" id="directory">
+        <div class="col-12 mb-4">
+            <h3 class="section-title"><i class="fas fa-address-card me-2"></i> دليل المكاتب والموظفات</h3>
+            <p class="text-muted">استعرض المكاتب والموظفات حسب الدور - اضغط على أي مكتب لعرض التفاصيل</p>
+        </div>
+
+        <div class="col-12 mb-4">
+            <div class="nav nav-pills gap-2" id="floor-tabs" role="tablist">
+                <button class="btn btn-outline-primary active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#ground-floor">
+                    الدور الأرضي <span class="badge bg-primary text-white ms-2">{{ stats.ground_floor }}</span>
+                </button>
+                <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#first-floor">
+                    الدور الأول <span class="badge bg-primary text-white ms-2">{{ stats.first_floor }}</span>
+                </button>
+                <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#second-floor">
+                    الدور الثاني <span class="badge bg-primary text-white ms-2">{{ stats.second_floor }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <!-- الدور الأرضي  -->
+            <div class="tab-pane fade show active" id="ground-floor">
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-desktop me-2"></i> G-123 - تقنية المعلومات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. غالية المالكي - رئيسة القسم</li>
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. تهاني الحمود - مدربة</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-clock"></i> أوقات الدوام: 8ص - 2م</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-users me-2"></i> G-125 - شؤون الموظفات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. امل المويس - مديرة الشؤون</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-phone"></i> داخلي: 125</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-user me-2"></i> G-134 - صالة متعددة الأغراض
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-users"></i> قاعة محاضرات - تتسع لـ 100 شخص</p>
+                                <small class="text-muted"><i class="fas fa-video"></i> مجهزة بأنظمة صوت ومرئي</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-theater-masks me-2"></i> G-030 - بهو المسرح
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-microphone-alt"></i> مسرح يتسع لـ 300 شخص</p>
+                                <small class="text-muted">يستخدم للمناسبات والمؤتمرات</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-user-graduate me-2"></i> G-045 - شؤون المتدربات
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-file-alt"></i> استقبال واستعلامات المتدربات</p>
+                                <small class="text-muted">VICE DEANS OF TRAINEES AFFAIRS</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-ground">📚 الدور الأرضي</span>
+                            <div class="card-header bg-ground text-white fw-bold py-3">
+                                <i class="fas fa-file-invoice-dollar me-2"></i> G-132 - الشؤون المالية
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. مشاعل المطيري - مديرة المالية</li>
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. نورة الروقي - محاسبة</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-calculator"></i> خدمات: الرواتب، الصرفيات</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الدور الأول -->
+            <div class="tab-pane fade" id="first-floor">
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-laptop-code me-2"></i> F-099 - رئيسة قسم الحاسب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. هند الحربي - رئيسة القسم</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-envelope"></i> h.alharbi@tvtc.edu.sa</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-093 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ثناء الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. تهاني معزي المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. خلود العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شجون المطيري</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-094 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. رحاب العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. إيمان الظلماوي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. هاجر المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. حنين العتيبي</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-095 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. حنان الدليالن</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ابتسام المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. منال الشمري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. عهود المسعد</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-100 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. خلود السهلي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. أثير القحطاني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. رنا العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. دانية الموسى</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شادن الجاسر</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ريهام السيف</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شوق الكمال</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-101 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شذى البدر</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. نوره الخلف</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مالك اليوسف</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. علياء القرني</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-102 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. سلمى الشهري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. أسماء العتيبي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. الهنوف الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مالك العبدالحافظ</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> F-103 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. خلود الجعيد</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. أماني المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. صفية الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شيخة العريدي</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-award me-2"></i> F-090 - وكالة الجودة
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. منال العمري - مديرة الجودة</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-clipboard-list"></i> الاعتماد الأكاديمي والجودة</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-briefcase me-2"></i> F-089 - وكالة شؤون التدريب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. وفاء العريفي - مديرة التدريب</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-graduation-cap"></i> البرامج التدريبية والشراكات</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-tasks me-2"></i> F-015 - رئيسة التنسيق
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. روان الكلثم - منسقة عامة</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-first">📚 الدور الأول</span>
+                            <div class="card-header bg-first text-white fw-bold py-3">
+                                <i class="fas fa-user-graduate me-2"></i> F-013 - وكالة شؤون المتدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. ايمان الحربي - وكيلة المتدربات</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الدور الثاني -->
+            <div class="tab-pane fade" id="second-floor">
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> S-074 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ندى العبلاني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> د. ابتهال اليماني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. زينب الناصر</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-door-closed me-2"></i> S-064 - مكتب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. نورة السبيعي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. دانة الثنيان</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ندى العمري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. بسمة عبداللطيف</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> S-073 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. ايمان الحربي</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. كوثر الوهيب</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. نوره بن حسن</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. جميلة الشهري</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-door-closed me-2"></i> S-065 - مكتب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. فاطمة التويجري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. فاطمة القرني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. غادة</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مها الزهراني</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-door-closed me-2"></i> S-066 - مكتب
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. اماني القرني</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. فاطمة الفايز</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. آل صقر</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. شروق المطيري</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. مي</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> S-069 - مكتب مدربات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list small">
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> د. نورة الحسين</li>
+                                    <li class="staff-item"><i class="fas fa-chalkboard-user"></i> أ. اروى الشايع</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-coffee me-2"></i> S-071 - استراحة مدربات
+                            </div>
+                            <div class="card-body">
+                                <p><i class="fas fa-mug-hot"></i> استراحة خاصة للمدربات</p>
+                                <small class="text-muted">COACHES LOUNGE</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card doctor-card border-0 shadow-sm h-100 position-relative">
+                            <span class="floor-badge badge-second">📚 الدور الثاني</span>
+                            <div class="card-header bg-second text-white fw-bold py-3">
+                                <i class="fas fa-user-tie me-2"></i> S-070 - رئيسة قسم الدراسات
+                            </div>
+                            <div class="card-body">
+                                <ul class="staff-list">
+                                    <li class="staff-item"><i class="fas fa-user-tie"></i> أ. تهاني شديد المطيري - رئيسة القسم</li>
+                                </ul>
+                                <hr>
+                                <small class="text-muted"><i class="fas fa-book-open"></i> المناهج والدراسات العليا</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
